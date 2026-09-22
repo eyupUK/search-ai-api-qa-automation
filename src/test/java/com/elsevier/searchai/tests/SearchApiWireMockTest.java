@@ -3,18 +3,15 @@ package com.elsevier.searchai.tests;
 import com.elsevier.searchai.client.SearchApiClient;
 import com.elsevier.searchai.config.RequestSpecFactory;
 import com.elsevier.searchai.models.SearchResponse;
+import com.elsevier.searchai.stubs.SearchApiStubs;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,64 +25,19 @@ class SearchApiWireMockTest {
     static void setUp() {
 
         wireMockServer = new WireMockServer(
-                options().dynamicPort()
+                options()
+                        .dynamicPort()
+                        .usingFilesUnderDirectory(
+                                "src/test/resources/wiremock"
+                        )
         );
 
         wireMockServer.start();
 
-        wireMockServer.stubFor(
-                get(urlPathEqualTo("/search"))
-                        .withQueryParam(
-                                "q",
-                                equalTo("machine learning")
-                        )
-                        .withQueryParam(
-                                "page",
-                                equalTo("1")
-                        )
-                        .withQueryParam(
-                                "pageSize",
-                                equalTo("2")
-                        )
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader(
-                                                "Content-Type",
-                                                "application/json"
-                                        )
-                                        .withBody("""
-                                            {
-                                              "query": "machine learning",
-                                              "page": 1,
-                                              "pageSize": 2,
-                                              "totalResults": 2,
-                                              "results": [
-                                                {
-                                                  "id": "DOC-001",
-                                                  "title": "Machine Learning Research",
-                                                  "abstract": "An overview of machine learning research.",
-                                                  "authors": [
-                                                    "Jane Smith",
-                                                    "John Jones"
-                                                  ],
-                                                  "publicationYear": 2025,
-                                                  "score": 0.98
-                                                },
-                                                {
-                                                  "id": "DOC-002",
-                                                  "title": "Deep Learning Methods",
-                                                  "abstract": "A study of deep learning methods.",
-                                                  "authors": [
-                                                    "David Brown"
-                                                  ],
-                                                  "publicationYear": 2024,
-                                                  "score": 0.91
-                                                }
-                                              ]
-                                            }
-                                            """)
-                        )
+        SearchApiStubs.stubSuccessfulSearch(wireMockServer);
+
+        SearchApiStubs.stubBlankQueryBadRequest(
+                wireMockServer
         );
 
         searchApiClient = new SearchApiClient(
@@ -98,7 +50,9 @@ class SearchApiWireMockTest {
     @AfterAll
     static void tearDown() {
 
-        wireMockServer.stop();
+        if (wireMockServer != null) {
+            wireMockServer.stop();
+        }
     }
 
     @Test
@@ -150,12 +104,41 @@ class SearchApiWireMockTest {
         );
 
         assertFalse(
-                searchResponse.getResults().get(0).getTitle().isBlank()
+                searchResponse.getResults()
+                        .get(0)
+                        .getTitle()
+                        .isBlank()
         );
 
         assertEquals(
                 2025,
-                searchResponse.getResults().get(0).getPublicationYear()
+                searchResponse.getResults()
+                        .get(0)
+                        .getPublicationYear()
         );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenQueryIsBlank() {
+
+        Response response = searchApiClient.search(
+                "",
+                1,
+                2
+        );
+
+        response.then()
+                .statusCode(400)
+                .contentType("application/json")
+                .body(
+                        "error",
+                        equalTo("INVALID_QUERY")
+                )
+                .body(
+                        "message",
+                        equalTo(
+                                "Query parameter 'q' must not be blank"
+                        )
+                );
     }
 }

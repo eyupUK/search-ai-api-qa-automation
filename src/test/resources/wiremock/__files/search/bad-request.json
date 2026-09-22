@@ -1,0 +1,4 @@
+{
+  "error": "INVALID_QUERY",
+  "message": "Query parameter 'q' must not be blank"
+}
