@@ -18,6 +18,10 @@ public final class SearchApiStubs {
 
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
                         .withQueryParam(
                                 "q",
                                 equalTo("machine learning")
@@ -50,6 +54,10 @@ public final class SearchApiStubs {
 
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
                         .withQueryParam(
                                 "q",
                                 equalTo("")
@@ -71,6 +79,151 @@ public final class SearchApiStubs {
                                         )
                                         .withBodyFile(
                                                 "search/bad-request.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubMissingAuthentication(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+//                        .withoutHeader("Authorization")
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/unauthorized.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubForbidden(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer forbidden-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(403)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/forbidden.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubRateLimited(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer rate-limited-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(429)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withHeader(
+                                                "Retry-After",
+                                                "30"
+                                        )
+                                        .withBodyFile(
+                                                "search/rate-limited.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubServerError(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer server-error-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(500)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/server-error.json"
                                         )
                         )
         );

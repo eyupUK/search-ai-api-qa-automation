@@ -1,5 +1,6 @@
 package com.elsevier.searchai.tests;
 
+import com.elsevier.searchai.assertions.ApiErrorAssertions;
 import com.elsevier.searchai.client.SearchApiClient;
 import com.elsevier.searchai.config.RequestSpecFactory;
 import com.elsevier.searchai.models.SearchResponse;
@@ -11,14 +12,25 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class SearchApiWireMockTest {
 
+    private static final String VALID_TOKEN = "valid-token";
+
+    private static final String FORBIDDEN_TOKEN =
+            "forbidden-token";
+
+    private static final String RATE_LIMITED_TOKEN =
+            "rate-limited-token";
+
+    private static final String SERVER_ERROR_TOKEN =
+            "server-error-token";
+
     private static WireMockServer wireMockServer;
+
     private static SearchApiClient searchApiClient;
 
     @BeforeAll
@@ -34,9 +46,27 @@ class SearchApiWireMockTest {
 
         wireMockServer.start();
 
-        SearchApiStubs.stubSuccessfulSearch(wireMockServer);
+        SearchApiStubs.stubSuccessfulSearch(
+                wireMockServer
+        );
 
         SearchApiStubs.stubBlankQueryBadRequest(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubMissingAuthentication(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubForbidden(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubRateLimited(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubServerError(
                 wireMockServer
         );
 
@@ -61,7 +91,8 @@ class SearchApiWireMockTest {
         Response response = searchApiClient.search(
                 "machine learning",
                 1,
-                2
+                2,
+                VALID_TOKEN
         );
 
         response.then()
@@ -100,7 +131,9 @@ class SearchApiWireMockTest {
 
         assertEquals(
                 "DOC-001",
-                searchResponse.getResults().get(0).getId()
+                searchResponse.getResults()
+                        .get(0)
+                        .getId()
         );
 
         assertFalse(
@@ -124,21 +157,91 @@ class SearchApiWireMockTest {
         Response response = searchApiClient.search(
                 "",
                 1,
+                2,
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_QUERY",
+                "Query parameter 'q' must not be blank"
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenAuthenticationIsMissing() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
                 2
         );
 
-        response.then()
-                .statusCode(400)
-                .contentType("application/json")
-                .body(
-                        "error",
-                        equalTo("INVALID_QUERY")
-                )
-                .body(
-                        "message",
-                        equalTo(
-                                "Query parameter 'q' must not be blank"
-                        )
-                );
+        ApiErrorAssertions.assertError(
+                response,
+                401,
+                "UNAUTHORIZED",
+                "Authentication is required"
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUserHasInsufficientPermissions() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                2,
+                FORBIDDEN_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                403,
+                "FORBIDDEN",
+                "Insufficient permissions"
+        );
+    }
+
+    @Test
+    void shouldReturnTooManyRequestsWhenRateLimitIsExceeded() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                2,
+                RATE_LIMITED_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                429,
+                "RATE_LIMITED",
+                "Rate limit exceeded"
+        );
+
+        assertEquals(
+                "30",
+                response.getHeader("Retry-After")
+        );
+    }
+
+    @Test
+    void shouldReturnServerErrorWhenSearchDependencyFails() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                2,
+                SERVER_ERROR_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                500,
+                "DOWNSTREAM_ERROR",
+                "Search dependency is unavailable"
+        );
     }
 }

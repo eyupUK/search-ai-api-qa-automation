@@ -44,11 +44,36 @@ public class SearchApiClient {
             int pageSize
     ) {
 
-        return given()
-                .spec(requestSpec)
-                .queryParam("q", query)
-                .queryParam("page", page)
-                .queryParam("pageSize", pageSize)
+        return search(
+                query,
+                page,
+                pageSize,
+                null
+        );
+    }
+
+    public Response search(
+            String query,
+            int page,
+            int pageSize,
+            String accessToken
+    ) {
+
+        RequestSpecification request =
+                given()
+                        .spec(requestSpec)
+                        .queryParam("q", query)
+                        .queryParam("page", page)
+                        .queryParam("pageSize", pageSize);
+
+        if (accessToken != null && !accessToken.isBlank()) {
+            request.header(
+                    "Authorization",
+                    "Bearer " + accessToken
+            );
+        }
+
+        return request
                 .when()
                 .get("/search");
     }
