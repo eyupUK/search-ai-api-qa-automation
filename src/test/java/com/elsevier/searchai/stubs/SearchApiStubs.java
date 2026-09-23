@@ -12,8 +12,6 @@ public final class SearchApiStubs {
     public static void stubSuccessfulSearch(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing successful search response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -30,7 +28,7 @@ public final class SearchApiStubs {
                         )
                         .withQueryParam(
                                 "pageSize",
-                                equalTo("2")
+                                matching("1|2|50|100")
                         )
                         .willReturn(
                                 aResponse()
@@ -49,8 +47,6 @@ public final class SearchApiStubs {
     public static void stubBlankQueryBadRequest(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing blank query bad request response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -86,8 +82,6 @@ public final class SearchApiStubs {
     public static void stubMissingAuthentication(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing missing authentication response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader("Authorization", absent())
@@ -120,8 +114,6 @@ public final class SearchApiStubs {
     public static void stubForbidden(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing forbidden response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -156,9 +148,7 @@ public final class SearchApiStubs {
 
     public static void stubRateLimited(
             WireMockServer wireMockServer
-    ) {
-        System.out.println("Stubbing rate limited response for /search endpoint");
-        wireMockServer.stubFor(
+    ) {wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
                                 "Authorization",
@@ -197,7 +187,6 @@ public final class SearchApiStubs {
     public static void stubServerError(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing server error response for /search endpoint");
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -233,8 +222,6 @@ public final class SearchApiStubs {
     public static void stubInvalidSearchContract(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing invalid search contract response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -272,8 +259,6 @@ public final class SearchApiStubs {
     public static void stubMissingQueryBadRequest(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing missing query bad request response for /search endpoint");
-
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -305,7 +290,6 @@ public final class SearchApiStubs {
     public static void stubInvalidPageBadRequest(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing invalid page bad request response for /search endpoint");
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
@@ -341,7 +325,6 @@ public final class SearchApiStubs {
     public static void stubInvalidPageSizeBadRequest(
             WireMockServer wireMockServer
     ) {
-        System.out.println("Stubbing invalid page size bad request response for /search endpoint");
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
                         .withHeader(
