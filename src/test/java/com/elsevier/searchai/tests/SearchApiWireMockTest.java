@@ -10,6 +10,8 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
@@ -30,6 +32,9 @@ class SearchApiWireMockTest {
 
     private static final String INVALID_CONTRACT_TOKEN =
             "invalid-contract-token";
+
+    private static final String MISSING_QUERY_TOKEN =
+            "missing-query-token";
 
     private static WireMockServer wireMockServer;
 
@@ -76,6 +81,18 @@ class SearchApiWireMockTest {
                 wireMockServer
         );
 
+        SearchApiStubs.stubMissingQueryBadRequest(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubInvalidPageBadRequest(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubInvalidPageSizeBadRequest(
+                wireMockServer
+        );
+
         searchApiClient = new SearchApiClient(
                 RequestSpecFactory.defaultRequestSpec(
                         wireMockServer.baseUrl()
@@ -102,6 +119,75 @@ class SearchApiWireMockTest {
         );
 
         response.then()
+                .log().all()
+                .statusCode(200)
+                .contentType("application/json");
+
+        SearchResponse searchResponse =
+                response.as(SearchResponse.class);
+
+        assertEquals(
+                "machine learning",
+                searchResponse.getQuery()
+        );
+
+        assertEquals(
+                1,
+                searchResponse.getPage()
+        );
+
+        assertEquals(
+                2,
+                searchResponse.getPageSize()
+        );
+
+        assertEquals(
+                2,
+                searchResponse.getTotalResults()
+        );
+
+        assertNotNull(searchResponse.getResults());
+
+        assertEquals(
+                2,
+                searchResponse.getResults().size()
+        );
+
+        assertEquals(
+                "DOC-001",
+                searchResponse.getResults()
+                        .get(0)
+                        .getId()
+        );
+
+        assertFalse(
+                searchResponse.getResults()
+                        .get(0)
+                        .getTitle()
+                        .isBlank()
+        );
+
+        assertEquals(
+                2025,
+                searchResponse.getResults()
+                        .get(0)
+                        .getPublicationYear()
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 50, 100})
+    void shouldReturnSearchResultsDD(int pageSize) {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                pageSize,
+                VALID_TOKEN
+        );
+
+        response.then()
+                .log().all()
                 .statusCode(200)
                 .contentType("application/json");
 
@@ -289,6 +375,61 @@ class SearchApiWireMockTest {
                                         "schemas/search-response-schema.json"
                                 )
                         )
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenQueryIsMissing() {
+
+        Response response = searchApiClient.searchWithoutQuery(
+                1,
+                2,
+                MISSING_QUERY_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "MISSING_QUERY",
+                "Query parameter 'q' is required"
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void shouldReturnBadRequestForInvalidPage(int page) {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                page,
+                2,
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE",
+                "Page must be greater than or equal to 1"
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 101})
+    void shouldReturnBadRequestForInvalidPageSize(int pageSize) {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                pageSize,
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE_SIZE",
+                "Page size must be between 1 and 100"
         );
     }
 }

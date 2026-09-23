@@ -1,0 +1,4 @@
+{
+  "error": "MISSING_QUERY",
+  "message": "Query parameter 'q' is required"
+}

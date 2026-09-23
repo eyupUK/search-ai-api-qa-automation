@@ -1,0 +1,4 @@
+{
+  "error": "INVALID_PAGE",
+  "message": "Page must be greater than or equal to 1"
+}

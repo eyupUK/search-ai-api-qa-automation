@@ -78,4 +78,28 @@ public class SearchApiClient {
                 .when()
                 .get("/search");
     }
+
+    public Response searchWithoutQuery(
+            int page,
+            int pageSize,
+            String accessToken
+    ) {
+
+        RequestSpecification request =
+                given()
+                        .spec(requestSpec)
+                        .queryParam("page", page)
+                        .queryParam("pageSize", pageSize);
+
+        if (accessToken != null && !accessToken.isBlank()) {
+            request.header(
+                    "Authorization",
+                    "Bearer " + accessToken
+            );
+        }
+        System.out.println("Request: " + request.log().all());
+        return request
+                .when()
+                .get("/search");
+    }
 }
