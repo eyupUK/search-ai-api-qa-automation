@@ -1,0 +1,4 @@
+{
+  "error": "INVALID_PAGE_SIZE",
+  "message": "Page size must be a valid integer"
+}

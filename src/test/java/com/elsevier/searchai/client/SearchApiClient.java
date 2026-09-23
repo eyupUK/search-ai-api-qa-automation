@@ -102,4 +102,30 @@ public class SearchApiClient {
                 .when()
                 .get("/search");
     }
+
+    public Response searchRaw(
+            String query,
+            String page,
+            String pageSize,
+            String accessToken
+    ) {
+
+        RequestSpecification request =
+                given()
+                        .spec(requestSpec)
+                        .queryParam("q", query)
+                        .queryParam("page", page)
+                        .queryParam("pageSize", pageSize);
+
+        if (accessToken != null && !accessToken.isBlank()) {
+            request.header(
+                    "Authorization",
+                    "Bearer " + accessToken
+            );
+        }
+
+        return request
+                .when()
+                .get("/search");
+    }
 }

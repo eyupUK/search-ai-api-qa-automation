@@ -357,5 +357,147 @@ public final class SearchApiStubs {
         );
     }
 
+    public static void stubInvalidPageFormat(
+            WireMockServer wireMockServer
+    ) {
 
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("abc")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/invalid-page-format.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubInvalidPageSizeFormat(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("abc")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/invalid-page-size-format.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubEmptyPage(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/empty-page.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubEmptyPageSize(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer valid-token")
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/empty-page-size.json"
+                                        )
+                        )
+        );
+    }
 }

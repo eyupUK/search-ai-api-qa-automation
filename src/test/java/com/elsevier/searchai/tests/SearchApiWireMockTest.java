@@ -93,6 +93,22 @@ class SearchApiWireMockTest {
                 wireMockServer
         );
 
+        SearchApiStubs.stubInvalidPageFormat(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubInvalidPageSizeFormat(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubEmptyPage(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubEmptyPageSize(
+                wireMockServer
+        );
+
         searchApiClient = new SearchApiClient(
                 RequestSpecFactory.defaultRequestSpec(
                         wireMockServer.baseUrl()
@@ -432,4 +448,77 @@ class SearchApiWireMockTest {
                 "Page size must be between 1 and 100"
         );
     }
+
+    @Test
+    void shouldReturnBadRequestWhenPageIsNotAnInteger() {
+
+        Response response = searchApiClient.searchRaw(
+                "machine learning",
+                "abc",
+                "2",
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE",
+                "Page must be a valid integer"
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenPageIsEmpty() {
+
+        Response response = searchApiClient.searchRaw(
+                "machine learning",
+                "",
+                "2",
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE",
+                "Page must be a valid integer"
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenPageSizeIsNotAnInteger() {
+
+        Response response = searchApiClient.searchRaw(
+                "machine learning",
+                "1",
+                "abc",
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE_SIZE",
+                "Page size must be a valid integer"
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenPageSizeIsEmpty() {
+
+        Response response = searchApiClient.searchRaw(
+                "machine learning",
+                "1",
+                "",
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE_SIZE",
+                "Page size must be a valid integer"
+        );
+    }
+
 }
