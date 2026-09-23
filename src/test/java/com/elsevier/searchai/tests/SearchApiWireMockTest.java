@@ -12,9 +12,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SearchApiWireMockTest {
 
@@ -28,6 +27,9 @@ class SearchApiWireMockTest {
 
     private static final String SERVER_ERROR_TOKEN =
             "server-error-token";
+
+    private static final String INVALID_CONTRACT_TOKEN =
+            "invalid-contract-token";
 
     private static WireMockServer wireMockServer;
 
@@ -67,6 +69,10 @@ class SearchApiWireMockTest {
         );
 
         SearchApiStubs.stubServerError(
+                wireMockServer
+        );
+
+        SearchApiStubs.stubInvalidSearchContract(
                 wireMockServer
         );
 
@@ -242,6 +248,47 @@ class SearchApiWireMockTest {
                 500,
                 "DOWNSTREAM_ERROR",
                 "Search dependency is unavailable"
+        );
+    }
+
+    @Test
+    void shouldMatchSearchResponseSchema() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                2,
+                VALID_TOKEN
+        );
+
+        response.then()
+                .statusCode(200)
+                .contentType("application/json")
+                .body(
+                        matchesJsonSchemaInClasspath(
+                                "schemas/search-response-schema.json"
+                        )
+                );
+    }
+
+    @Test
+    void shouldRejectInvalidSearchResponseContract() {
+
+        Response response = searchApiClient.search(
+                "machine learning",
+                1,
+                2,
+                INVALID_CONTRACT_TOKEN
+        );
+
+        assertThrows(
+                AssertionError.class,
+                () -> response.then()
+                        .body(
+                                matchesJsonSchemaInClasspath(
+                                        "schemas/search-response-schema.json"
+                                )
+                        )
         );
     }
 }

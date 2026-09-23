@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Search API response",
+  "type": "object",
+
+  "required": [
+    "query",
+    "page",
+    "pageSize",
+    "totalResults",
+    "results"
+  ],
+
+  "properties": {
+
+    "query": {
+      "type": "string"
+    },
+
+    "page": {
+      "type": "integer",
+      "minimum": 1
+    },
+
+    "pageSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+
+    "totalResults": {
+      "type": "integer",
+      "minimum": 0
+    },
+
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/searchResult"
+      }
+    }
+  },
+
+  "definitions": {
+
+    "searchResult": {
+
+      "type": "object",
+
+      "required": [
+        "id",
+        "title",
+        "abstract",
+        "authors",
+        "publicationYear",
+        "score"
+      ],
+
+      "properties": {
+
+        "id": {
+          "type": "string"
+        },
+
+        "title": {
+          "type": "string"
+        },
+
+        "abstract": {
+          "type": "string"
+        },
+
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+
+        "publicationYear": {
+          "type": "integer"
+        },
+
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

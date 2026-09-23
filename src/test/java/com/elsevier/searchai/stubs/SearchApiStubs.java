@@ -3,6 +3,7 @@ package com.elsevier.searchai.stubs;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -90,7 +91,7 @@ public final class SearchApiStubs {
 
         wireMockServer.stubFor(
                 get(urlPathEqualTo("/search"))
-//                        .withoutHeader("Authorization")
+                        .withHeader("Authorization", absent())
                         .withQueryParam(
                                 "q",
                                 equalTo("machine learning")
@@ -224,6 +225,44 @@ public final class SearchApiStubs {
                                         )
                                         .withBodyFile(
                                                 "search/server-error.json"
+                                        )
+                        )
+        );
+    }
+
+    public static void stubInvalidSearchContract(
+            WireMockServer wireMockServer
+    ) {
+
+        wireMockServer.stubFor(
+                get(urlPathEqualTo("/search"))
+                        .withHeader(
+                                "Authorization",
+                                equalTo(
+                                        "Bearer invalid-contract-token"
+                                )
+                        )
+                        .withQueryParam(
+                                "q",
+                                equalTo("machine learning")
+                        )
+                        .withQueryParam(
+                                "page",
+                                equalTo("1")
+                        )
+                        .withQueryParam(
+                                "pageSize",
+                                equalTo("2")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBodyFile(
+                                                "search/invalid-contract.json"
                                         )
                         )
         );

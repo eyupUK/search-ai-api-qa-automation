@@ -72,6 +72,7 @@ public class SearchApiClient {
                     "Bearer " + accessToken
             );
         }
+        System.out.println("Request: " + request.log().all());
 
         return request
                 .when()
