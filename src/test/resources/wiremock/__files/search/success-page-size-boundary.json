@@ -1,0 +1,18 @@
+{
+  "query": "machine learning",
+  "page": 1,
+  "pageSize": 1,
+  "totalResults": 1,
+  "results": [
+    {
+      "id": "DOC-001",
+      "title": "Machine Learning Research",
+      "abstract": "An overview of machine learning research.",
+      "authors": [
+        "Jane Smith"
+      ],
+      "publicationYear": 2025,
+      "score": 0.98
+    }
+  ]
+}

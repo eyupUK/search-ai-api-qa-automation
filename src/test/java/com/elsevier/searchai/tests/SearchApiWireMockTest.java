@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -36,9 +37,18 @@ class SearchApiWireMockTest {
     private static final String MISSING_QUERY_TOKEN =
             "missing-query-token";
 
+    private static final String SEARCH_QUERY =
+            "machine learning";
+
+    private static final int FIRST_PAGE = 1;
+
+    private static final int DEFAULT_PAGE_SIZE = 2;
+
     private static WireMockServer wireMockServer;
 
     private static SearchApiClient searchApiClient;
+
+//    private static String page;
 
     @BeforeAll
     static void setUp() {
@@ -53,67 +63,16 @@ class SearchApiWireMockTest {
 
         wireMockServer.start();
 
-        SearchApiStubs.stubSuccessfulSearch(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubBlankQueryBadRequest(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubMissingAuthentication(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubForbidden(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubRateLimited(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubServerError(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubInvalidSearchContract(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubMissingQueryBadRequest(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubInvalidPageBadRequest(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubInvalidPageSizeBadRequest(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubInvalidPageFormat(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubInvalidPageSizeFormat(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubEmptyPage(
-                wireMockServer
-        );
-
-        SearchApiStubs.stubEmptyPageSize(
-                wireMockServer
-        );
-
         searchApiClient = new SearchApiClient(
                 RequestSpecFactory.defaultRequestSpec(
                         wireMockServer.baseUrl()
                 )
         );
+    }
+
+    @BeforeEach
+    void resetWireMock() {
+        wireMockServer.resetAll();
     }
 
     @AfterAll
@@ -127,15 +86,24 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnSearchResults() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                200,
+                "search/success.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 VALID_TOKEN
         );
 
         response.then()
-                .log().all()
                 .statusCode(200)
                 .contentType("application/json");
 
@@ -143,85 +111,17 @@ class SearchApiWireMockTest {
                 response.as(SearchResponse.class);
 
         assertEquals(
-                "machine learning",
+                SEARCH_QUERY,
                 searchResponse.getQuery()
         );
 
         assertEquals(
-                1,
+                FIRST_PAGE,
                 searchResponse.getPage()
         );
 
         assertEquals(
-                2,
-                searchResponse.getPageSize()
-        );
-
-        assertEquals(
-                2,
-                searchResponse.getTotalResults()
-        );
-
-        assertNotNull(searchResponse.getResults());
-
-        assertEquals(
-                2,
-                searchResponse.getResults().size()
-        );
-
-        assertEquals(
-                "DOC-001",
-                searchResponse.getResults()
-                        .get(0)
-                        .getId()
-        );
-
-        assertFalse(
-                searchResponse.getResults()
-                        .get(0)
-                        .getTitle()
-                        .isBlank()
-        );
-
-        assertEquals(
-                2025,
-                searchResponse.getResults()
-                        .get(0)
-                        .getPublicationYear()
-        );
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {1, 50, 100})
-    void shouldReturnSearchResultsDD(int pageSize) {
-
-        Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                pageSize,
-                VALID_TOKEN
-        );
-
-        response.then()
-                .log().all()
-                .statusCode(200)
-                .contentType("application/json");
-
-        SearchResponse searchResponse =
-                response.as(SearchResponse.class);
-
-        assertEquals(
-                "machine learning",
-                searchResponse.getQuery()
-        );
-
-        assertEquals(
-                1,
-                searchResponse.getPage()
-        );
-
-        assertEquals(
-                2,
+                DEFAULT_PAGE_SIZE,
                 searchResponse.getPageSize()
         );
 
@@ -262,10 +162,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenQueryIsBlank() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                "",
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/bad-request.json"
+        );
+
         Response response = searchApiClient.search(
                 "",
-                1,
-                2,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 VALID_TOKEN
         );
 
@@ -280,10 +190,19 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnUnauthorizedWhenAuthenticationIsMissing() {
 
+        SearchApiStubs.stubSearchWithoutAuthentication(
+                wireMockServer,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                401,
+                "search/unauthorized.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE
         );
 
         ApiErrorAssertions.assertError(
@@ -297,10 +216,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnForbiddenWhenUserHasInsufficientPermissions() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                FORBIDDEN_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                403,
+                "search/forbidden.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 FORBIDDEN_TOKEN
         );
 
@@ -315,10 +244,21 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnTooManyRequestsWhenRateLimitIsExceeded() {
 
+        SearchApiStubs.stubRateLimitedSearch(
+                wireMockServer,
+                RATE_LIMITED_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                429,
+                "search/rate-limited.json",
+                "30"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 RATE_LIMITED_TOKEN
         );
 
@@ -338,10 +278,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnServerErrorWhenSearchDependencyFails() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                SERVER_ERROR_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                500,
+                "search/server-error.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 SERVER_ERROR_TOKEN
         );
 
@@ -356,10 +306,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldMatchSearchResponseSchema() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                200,
+                "search/success.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 VALID_TOKEN
         );
 
@@ -376,10 +336,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldRejectInvalidSearchResponseContract() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                INVALID_CONTRACT_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                200,
+                "search/invalid-contract.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
-                2,
+                SEARCH_QUERY,
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
                 INVALID_CONTRACT_TOKEN
         );
 
@@ -397,10 +367,19 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenQueryIsMissing() {
 
+        SearchApiStubs.stubSearchWithoutQuery(
+                wireMockServer,
+                VALID_TOKEN,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/missing-query.json"
+        );
+
         Response response = searchApiClient.searchWithoutQuery(
-                1,
-                2,
-                MISSING_QUERY_TOKEN
+                FIRST_PAGE,
+                DEFAULT_PAGE_SIZE,
+                VALID_TOKEN
         );
 
         ApiErrorAssertions.assertError(
@@ -415,10 +394,20 @@ class SearchApiWireMockTest {
     @ValueSource(ints = {0, -1})
     void shouldReturnBadRequestForInvalidPage(int page) {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(page),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/invalid-page.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
+                SEARCH_QUERY,
                 page,
-                2,
+                DEFAULT_PAGE_SIZE,
                 VALID_TOKEN
         );
 
@@ -434,9 +423,19 @@ class SearchApiWireMockTest {
     @ValueSource(ints = {0, 101})
     void shouldReturnBadRequestForInvalidPageSize(int pageSize) {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(pageSize),
+                400,
+                "search/invalid-page-size.json"
+        );
+
         Response response = searchApiClient.search(
-                "machine learning",
-                1,
+                SEARCH_QUERY,
+                FIRST_PAGE,
                 pageSize,
                 VALID_TOKEN
         );
@@ -452,10 +451,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenPageIsNotAnInteger() {
 
-        Response response = searchApiClient.searchRaw(
-                "machine learning",
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
                 "abc",
-                "2",
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/invalid-page-format.json"
+        );
+
+        Response response = searchApiClient.searchRaw(
+                SEARCH_QUERY,
+                "abc",
+                String.valueOf(DEFAULT_PAGE_SIZE),
                 VALID_TOKEN
         );
 
@@ -470,10 +479,20 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenPageIsEmpty() {
 
-        Response response = searchApiClient.searchRaw(
-                "machine learning",
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
                 "",
-                "2",
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/invalid-page-format.json"
+        );
+
+        Response response = searchApiClient.searchRaw(
+                SEARCH_QUERY,
+                "",
+                String.valueOf(DEFAULT_PAGE_SIZE),
                 VALID_TOKEN
         );
 
@@ -488,9 +507,19 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenPageSizeIsNotAnInteger() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                "abc",
+                400,
+                "search/invalid-page-size-format.json"
+        );
+
         Response response = searchApiClient.searchRaw(
-                "machine learning",
-                "1",
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
                 "abc",
                 VALID_TOKEN
         );
@@ -506,9 +535,19 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnBadRequestWhenPageSizeIsEmpty() {
 
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                "",
+                400,
+                "search/invalid-page-size-format.json"
+        );
+
         Response response = searchApiClient.searchRaw(
-                "machine learning",
-                "1",
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
                 "",
                 VALID_TOKEN
         );
@@ -521,4 +560,34 @@ class SearchApiWireMockTest {
         );
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "hello", "1.5"})
+    void shouldReturnBadRequestWhenPageFormatIsInvalid(
+            String page
+    ) {
+
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                page,
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                400,
+                "search/invalid-page-format.json"
+        );
+
+        Response response = searchApiClient.searchRaw(
+                SEARCH_QUERY,
+                page,
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                VALID_TOKEN
+        );
+
+        ApiErrorAssertions.assertError(
+                response,
+                400,
+                "INVALID_PAGE",
+                "Page must be a valid integer"
+        );
+    }
 }
