@@ -1,5 +1,6 @@
 package com.elsevier.searchai.client;
 
+import com.elsevier.searchai.models.SearchRequest;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
@@ -45,9 +46,11 @@ public class SearchApiClient {
     ) {
 
         return search(
-                query,
-                page,
-                pageSize,
+                SearchRequest.builder()
+                        .query(query)
+                        .page(page)
+                        .pageSize(pageSize)
+                        .build(),
                 null
         );
     }
@@ -59,19 +62,41 @@ public class SearchApiClient {
             String accessToken
     ) {
 
+        return search(
+                SearchRequest.builder()
+                        .query(query)
+                        .page(page)
+                        .pageSize(pageSize)
+                        .build(),
+                accessToken
+        );
+    }
+
+    public Response search(
+            SearchRequest searchRequest,
+            String accessToken
+    ) {
+
         RequestSpecification request =
                 given()
                         .spec(requestSpec)
-                        .queryParam("q", query)
-                        .queryParam("page", page)
-                        .queryParam("pageSize", pageSize);
+                        .queryParam(
+                                "q",
+                                searchRequest.getQuery()
+                        )
+                        .queryParam(
+                                "page",
+                                searchRequest.getPage()
+                        )
+                        .queryParam(
+                                "pageSize",
+                                searchRequest.getPageSize()
+                        );
 
-        if (accessToken != null && !accessToken.isBlank()) {
-            request.header(
-                    "Authorization",
-                    "Bearer " + accessToken
-            );
-        }
+        addAuthorizationHeader(
+                request,
+                accessToken
+        );
 
         return request
                 .when()
@@ -90,12 +115,10 @@ public class SearchApiClient {
                         .queryParam("page", page)
                         .queryParam("pageSize", pageSize);
 
-        if (accessToken != null && !accessToken.isBlank()) {
-            request.header(
-                    "Authorization",
-                    "Bearer " + accessToken
-            );
-        }
+        addAuthorizationHeader(
+                request,
+                accessToken
+        );
 
         return request
                 .when()
@@ -116,15 +139,26 @@ public class SearchApiClient {
                         .queryParam("page", page)
                         .queryParam("pageSize", pageSize);
 
+        addAuthorizationHeader(
+                request,
+                accessToken
+        );
+
+        return request
+                .when()
+                .get("/search");
+    }
+
+    private void addAuthorizationHeader(
+            RequestSpecification request,
+            String accessToken
+    ) {
+
         if (accessToken != null && !accessToken.isBlank()) {
             request.header(
                     "Authorization",
                     "Bearer " + accessToken
             );
         }
-
-        return request
-                .when()
-                .get("/search");
     }
 }

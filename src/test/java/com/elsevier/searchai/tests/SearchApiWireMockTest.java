@@ -3,6 +3,7 @@ package com.elsevier.searchai.tests;
 import com.elsevier.searchai.assertions.ApiErrorAssertions;
 import com.elsevier.searchai.client.SearchApiClient;
 import com.elsevier.searchai.config.RequestSpecFactory;
+import com.elsevier.searchai.models.SearchRequest;
 import com.elsevier.searchai.models.SearchResponse;
 import com.elsevier.searchai.stubs.SearchApiStubs;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -34,9 +35,6 @@ class SearchApiWireMockTest {
     private static final String INVALID_CONTRACT_TOKEN =
             "invalid-contract-token";
 
-    private static final String MISSING_QUERY_TOKEN =
-            "missing-query-token";
-
     private static final String SEARCH_QUERY =
             "machine learning";
 
@@ -48,7 +46,6 @@ class SearchApiWireMockTest {
 
     private static SearchApiClient searchApiClient;
 
-//    private static String page;
 
     @BeforeAll
     static void setUp() {
@@ -96,10 +93,14 @@ class SearchApiWireMockTest {
                 "search/success.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 VALID_TOKEN
         );
 
@@ -160,6 +161,53 @@ class SearchApiWireMockTest {
     }
 
     @Test
+    void shouldReturnSearchResultsUsingSearchRequest() {
+
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
+        SearchApiStubs.stubSearchResponse(
+                wireMockServer,
+                VALID_TOKEN,
+                SEARCH_QUERY,
+                String.valueOf(FIRST_PAGE),
+                String.valueOf(DEFAULT_PAGE_SIZE),
+                200,
+                "search/success.json"
+        );
+
+        Response response = searchApiClient.search(
+                searchRequest,
+                VALID_TOKEN
+        );
+
+        response.then()
+                .statusCode(200)
+                .contentType("application/json");
+
+        SearchResponse searchResponse =
+                response.as(SearchResponse.class);
+
+        assertEquals(
+                SEARCH_QUERY,
+                searchResponse.getQuery()
+        );
+
+        assertEquals(
+                FIRST_PAGE,
+                searchResponse.getPage()
+        );
+
+        assertEquals(
+                DEFAULT_PAGE_SIZE,
+                searchResponse.getPageSize()
+        );
+    }
+
+    @Test
     void shouldReturnBadRequestWhenQueryIsBlank() {
 
         SearchApiStubs.stubSearchResponse(
@@ -172,10 +220,14 @@ class SearchApiWireMockTest {
                 "search/bad-request.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query("")
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                "",
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 VALID_TOKEN
         );
 
@@ -226,10 +278,14 @@ class SearchApiWireMockTest {
                 "search/forbidden.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 FORBIDDEN_TOKEN
         );
 
@@ -255,10 +311,14 @@ class SearchApiWireMockTest {
                 "30"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 RATE_LIMITED_TOKEN
         );
 
@@ -288,10 +348,14 @@ class SearchApiWireMockTest {
                 "search/server-error.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 SERVER_ERROR_TOKEN
         );
 
@@ -316,10 +380,14 @@ class SearchApiWireMockTest {
                 "search/success.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 VALID_TOKEN
         );
 
@@ -346,10 +414,14 @@ class SearchApiWireMockTest {
                 "search/invalid-contract.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 INVALID_CONTRACT_TOKEN
         );
 
@@ -404,10 +476,14 @@ class SearchApiWireMockTest {
                 "search/invalid-page.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(page)
+                .pageSize(DEFAULT_PAGE_SIZE)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                page,
-                DEFAULT_PAGE_SIZE,
+                searchRequest,
                 VALID_TOKEN
         );
 
@@ -433,10 +509,14 @@ class SearchApiWireMockTest {
                 "search/invalid-page-size.json"
         );
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(SEARCH_QUERY)
+                .page(FIRST_PAGE)
+                .pageSize(pageSize)
+                .build();
+
         Response response = searchApiClient.search(
-                SEARCH_QUERY,
-                FIRST_PAGE,
-                pageSize,
+                searchRequest,
                 VALID_TOKEN
         );
 
