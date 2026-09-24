@@ -6,26 +6,22 @@ public final class SearchRequestBuilder {
     private int page;
     private int pageSize;
 
-    public SearchRequestBuilder query(String query) {
+    public SearchRequestBuilder query(String query){
         this.query = query;
         return this;
     }
 
-    public SearchRequestBuilder page(int page) {
+    public SearchRequestBuilder page(int page){
         this.page = page;
         return this;
     }
 
-    public SearchRequestBuilder pageSize(int pageSize) {
+    public SearchRequestBuilder pageSize(int pageSize){
         this.pageSize = pageSize;
         return this;
     }
 
-    public SearchRequest build() {
-        return new SearchRequest(
-                query,
-                page,
-                pageSize
-        );
+    public SearchRequest build(){
+        return new SearchRequest(query, page, pageSize);
     }
 }

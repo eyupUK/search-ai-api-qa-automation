@@ -528,6 +528,7 @@ class SearchApiWireMockTest {
         );
     }
 
+    // Malformed request tests
     @Test
     void shouldReturnBadRequestWhenPageIsNotAnInteger() {
 
