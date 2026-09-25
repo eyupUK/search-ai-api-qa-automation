@@ -7,6 +7,7 @@ import com.elsevier.searchai.config.ResponseSpecFactory;
 import com.elsevier.searchai.models.SearchRequest;
 import com.elsevier.searchai.models.SearchResponse;
 import com.elsevier.searchai.stubs.SearchApiStubs;
+import com.elsevier.searchai.testdata.SearchTestData;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
@@ -88,21 +89,19 @@ class SearchApiWireMockTest {
     @Test
     void shouldReturnSearchResults() {
 
+        SearchRequest searchRequest =
+                SearchTestData.validSearch()
+                        .build();
+
         SearchApiStubs.stubSearchResponse(
                 wireMockServer,
                 VALID_TOKEN,
-                SEARCH_QUERY,
-                String.valueOf(FIRST_PAGE),
-                String.valueOf(DEFAULT_PAGE_SIZE),
+                searchRequest.getQuery(),
+                String.valueOf(searchRequest.getPage()),
+                String.valueOf(searchRequest.getPageSize()),
                 200,
                 "search/success.json"
         );
-
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(SEARCH_QUERY)
-                .page(FIRST_PAGE)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
 
         Response response = searchApiClient.search(
                 searchRequest,
@@ -167,6 +166,11 @@ class SearchApiWireMockTest {
                 searchResponse.getResults()
                         .get(0)
                         .getPublicationYear()
+        );
+
+        assertEquals(
+                searchRequest.getQuery(),
+                searchResponse.getQuery()
         );
 
         wireMockServer.verify(
@@ -489,24 +493,23 @@ class SearchApiWireMockTest {
     @ValueSource(ints = {0, -1})
     void shouldReturnBadRequestForInvalidPage(int page) {
 
+        SearchRequest request =
+                SearchTestData.validSearch()
+                        .page(page)
+                        .build();
+
         SearchApiStubs.stubSearchResponse(
                 wireMockServer,
                 VALID_TOKEN,
-                SEARCH_QUERY,
-                String.valueOf(page),
-                String.valueOf(DEFAULT_PAGE_SIZE),
+                request.getQuery(),
+                String.valueOf(request.getPage()),
+                String.valueOf(request.getPageSize()),
                 400,
                 "search/invalid-page.json"
         );
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(SEARCH_QUERY)
-                .page(page)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
-
         Response response = searchApiClient.search(
-                searchRequest,
+                request,
                 VALID_TOKEN
         );
 
