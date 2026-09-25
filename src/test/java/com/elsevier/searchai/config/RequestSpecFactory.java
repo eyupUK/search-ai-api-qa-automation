@@ -5,8 +5,6 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-
-import static io.restassured.config.LogConfig.logConfig;
 import static io.restassured.config.RestAssuredConfig.config;
 
 public final class RequestSpecFactory {
@@ -43,9 +41,7 @@ public final class RequestSpecFactory {
         RestAssuredConfig restAssuredConfig =
                 config()
                         .logConfig(
-                                logConfig()
-                                        .blacklistDefaultSensitiveHeaders()
-                                        .enableLoggingOfRequestAndResponseIfValidationFails()
+                                LoggingConfigFactory.create()
                         );
 
         return new RequestSpecBuilder()
