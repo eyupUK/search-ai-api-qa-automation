@@ -1,6 +1,5 @@
 package com.elsevier.searchai.client;
 
-import com.elsevier.searchai.config.RequestSpecFactory;
 import com.elsevier.searchai.models.SearchRequest;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -51,65 +50,41 @@ public class SearchApiClient {
                         .query(query)
                         .page(page)
                         .pageSize(pageSize)
-                        .build(),
-                null
+                        .build()
         );
     }
 
     public Response search(
-            String query,
-            int page,
-            int pageSize,
-            String accessToken
+            SearchRequest searchRequest
     ) {
 
-        return search(
-                SearchRequest.builder()
-                        .query(query)
-                        .page(page)
-                        .pageSize(pageSize)
-                        .build(),
-                accessToken
-        );
-    }
-
-    public Response search(
-            SearchRequest searchRequest,
-            String accessToken
-    ) {
-
-        RequestSpecification request =
-                requestWithAuthentication(accessToken)
-                        .queryParam(
-                                "q",
-                                searchRequest.getQuery()
-                        )
-                        .queryParam(
-                                "page",
-                                searchRequest.getPage()
-                        )
-                        .queryParam(
-                                "pageSize",
-                                searchRequest.getPageSize()
-                        );
-
-        return request
+        return given()
+                .spec(requestSpec)
+                .queryParam(
+                        "q",
+                        searchRequest.getQuery()
+                )
+                .queryParam(
+                        "page",
+                        searchRequest.getPage()
+                )
+                .queryParam(
+                        "pageSize",
+                        searchRequest.getPageSize()
+                )
                 .when()
                 .get("/search");
     }
 
     public Response searchWithoutQuery(
             int page,
-            int pageSize,
-            String accessToken
+            int pageSize
     ) {
 
-        RequestSpecification request =
-                requestWithAuthentication(accessToken)
-                        .queryParam("page", page)
-                        .queryParam("pageSize", pageSize);
-
-        return request
+        return given()
+                .spec(requestSpec)
+                .queryParam("page", page)
+                .queryParam("pageSize", pageSize)
                 .when()
                 .get("/search");
     }
@@ -117,36 +92,15 @@ public class SearchApiClient {
     public Response searchRaw(
             String query,
             String page,
-            String pageSize,
-            String accessToken
+            String pageSize
     ) {
-
-        RequestSpecification request =
-                requestWithAuthentication(accessToken)
-                        .queryParam("q", query)
-                        .queryParam("page", page)
-                        .queryParam("pageSize", pageSize);
-
-        return request
-                .when()
-                .get("/search");
-    }
-
-    private RequestSpecification requestWithAuthentication(
-            String accessToken
-    ) {
-
-        if (accessToken == null || accessToken.isBlank()) {
-            return given()
-                    .spec(requestSpec);
-        }
 
         return given()
-                .spec(
-                        RequestSpecFactory.authenticatedRequestSpec(
-                                requestSpec,
-                                accessToken
-                        )
-                );
+                .spec(requestSpec)
+                .queryParam("q", query)
+                .queryParam("page", page)
+                .queryParam("pageSize", pageSize)
+                .when()
+                .get("/search");
     }
 }
