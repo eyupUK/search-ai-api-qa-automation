@@ -9,6 +9,12 @@ public final class RequestSpecFactory {
     private static final String DEFAULT_BASE_URI =
             "https://jsonplaceholder.typicode.com";
 
+    private static final String AUTHORIZATION_HEADER =
+            "Authorization";
+
+    private static final String BEARER_PREFIX =
+            "Bearer ";
+
     private RequestSpecFactory() {
     }
 
@@ -29,6 +35,26 @@ public final class RequestSpecFactory {
         return new RequestSpecBuilder()
                 .setBaseUri(baseUri)
                 .setAccept(ContentType.JSON)
+                .build();
+    }
+
+    public static RequestSpecification authenticatedRequestSpec(
+            RequestSpecification baseRequestSpec,
+            String accessToken
+    ) {
+
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Access token must not be null or blank"
+            );
+        }
+
+        return new RequestSpecBuilder()
+                .addRequestSpecification(baseRequestSpec)
+                .addHeader(
+                        AUTHORIZATION_HEADER,
+                        BEARER_PREFIX + accessToken
+                )
                 .build();
     }
 }

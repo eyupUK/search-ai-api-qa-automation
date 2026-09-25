@@ -1,5 +1,6 @@
 package com.elsevier.searchai.client;
 
+import com.elsevier.searchai.config.RequestSpecFactory;
 import com.elsevier.searchai.models.SearchRequest;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -78,8 +79,7 @@ public class SearchApiClient {
     ) {
 
         RequestSpecification request =
-                given()
-                        .spec(requestSpec)
+                requestWithAuthentication(accessToken)
                         .queryParam(
                                 "q",
                                 searchRequest.getQuery()
@@ -93,11 +93,6 @@ public class SearchApiClient {
                                 searchRequest.getPageSize()
                         );
 
-        addAuthorizationHeader(
-                request,
-                accessToken
-        );
-
         return request
                 .when()
                 .get("/search");
@@ -110,15 +105,9 @@ public class SearchApiClient {
     ) {
 
         RequestSpecification request =
-                given()
-                        .spec(requestSpec)
+                requestWithAuthentication(accessToken)
                         .queryParam("page", page)
                         .queryParam("pageSize", pageSize);
-
-        addAuthorizationHeader(
-                request,
-                accessToken
-        );
 
         return request
                 .when()
@@ -133,32 +122,31 @@ public class SearchApiClient {
     ) {
 
         RequestSpecification request =
-                given()
-                        .spec(requestSpec)
+                requestWithAuthentication(accessToken)
                         .queryParam("q", query)
                         .queryParam("page", page)
                         .queryParam("pageSize", pageSize);
-
-        addAuthorizationHeader(
-                request,
-                accessToken
-        );
 
         return request
                 .when()
                 .get("/search");
     }
 
-    private void addAuthorizationHeader(
-            RequestSpecification request,
+    private RequestSpecification requestWithAuthentication(
             String accessToken
     ) {
 
-        if (accessToken != null && !accessToken.isBlank()) {
-            request.header(
-                    "Authorization",
-                    "Bearer " + accessToken
-            );
+        if (accessToken == null || accessToken.isBlank()) {
+            return given()
+                    .spec(requestSpec);
         }
+
+        return given()
+                .spec(
+                        RequestSpecFactory.authenticatedRequestSpec(
+                                requestSpec,
+                                accessToken
+                        )
+                );
     }
 }
