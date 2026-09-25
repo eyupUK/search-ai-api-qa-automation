@@ -1,6 +1,8 @@
 package com.elsevier.searchai.tests;
 
 import com.elsevier.searchai.assertions.ApiErrorAssertions;
+import com.elsevier.searchai.auth.StaticTokenProvider;
+import com.elsevier.searchai.auth.TokenProvider;
 import com.elsevier.searchai.client.SearchApiClient;
 import com.elsevier.searchai.config.RequestSpecFactory;
 import com.elsevier.searchai.config.ResponseSpecFactory;
@@ -41,6 +43,21 @@ class SearchApiWireMockTest {
 
     private static final String INVALID_CONTRACT_TOKEN =
             "invalid-contract-token";
+
+    private static final TokenProvider VALID_TOKEN_PROVIDER =
+            new StaticTokenProvider(VALID_TOKEN);
+
+    private static final TokenProvider FORBIDDEN_TOKEN_PROVIDER =
+            new StaticTokenProvider(FORBIDDEN_TOKEN);
+
+    private static final TokenProvider RATE_LIMITED_TOKEN_PROVIDER =
+            new StaticTokenProvider(RATE_LIMITED_TOKEN);
+
+    private static final TokenProvider SERVER_ERROR_TOKEN_PROVIDER =
+            new StaticTokenProvider(SERVER_ERROR_TOKEN);
+
+    private static final TokenProvider INVALID_CONTRACT_TOKEN_PROVIDER =
+            new StaticTokenProvider(INVALID_CONTRACT_TOKEN);
 
     private static final String SEARCH_QUERY =
             "machine learning";
@@ -91,13 +108,13 @@ class SearchApiWireMockTest {
     }
 
     private SearchApiClient authenticatedClient(
-            String accessToken
+            TokenProvider tokenProvider
     ) {
 
         RequestSpecification authenticatedRequestSpec =
                 RequestSpecFactory.authenticatedRequestSpec(
                         baseRequestSpec,
-                        accessToken
+                        tokenProvider
                 );
 
         return new SearchApiClient(
@@ -123,7 +140,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .search(searchRequest);
 
         response.then()
@@ -224,10 +241,8 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
-                        .search(
-                                searchRequest
-                        );
+                authenticatedClient(VALID_TOKEN_PROVIDER)
+                        .search(searchRequest);
 
         response.then()
                 .statusCode(200)
@@ -265,14 +280,8 @@ class SearchApiWireMockTest {
                 "search/bad-request.json"
         );
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query("")
-                .page(FIRST_PAGE)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
-
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .search(
                                 "",
                                 FIRST_PAGE,
@@ -326,16 +335,12 @@ class SearchApiWireMockTest {
                 "search/forbidden.json"
         );
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(SEARCH_QUERY)
-                .page(FIRST_PAGE)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
-
         Response response =
-                authenticatedClient(FORBIDDEN_TOKEN)
+                authenticatedClient(FORBIDDEN_TOKEN_PROVIDER)
                         .search(
-                                searchRequest
+                                SEARCH_QUERY,
+                                FIRST_PAGE,
+                                DEFAULT_PAGE_SIZE
                         );
 
         ApiErrorAssertions.assertError(
@@ -360,16 +365,12 @@ class SearchApiWireMockTest {
                 "30"
         );
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(SEARCH_QUERY)
-                .page(FIRST_PAGE)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
-
         Response response =
-                authenticatedClient(RATE_LIMITED_TOKEN)
+                authenticatedClient(RATE_LIMITED_TOKEN_PROVIDER)
                         .search(
-                                searchRequest
+                                SEARCH_QUERY,
+                                FIRST_PAGE,
+                                DEFAULT_PAGE_SIZE
                         );
 
         ApiErrorAssertions.assertError(
@@ -398,16 +399,12 @@ class SearchApiWireMockTest {
                 "search/server-error.json"
         );
 
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(SEARCH_QUERY)
-                .page(FIRST_PAGE)
-                .pageSize(DEFAULT_PAGE_SIZE)
-                .build();
-
         Response response =
-                authenticatedClient(SERVER_ERROR_TOKEN)
+                authenticatedClient(SERVER_ERROR_TOKEN_PROVIDER)
                         .search(
-                                searchRequest
+                                SEARCH_QUERY,
+                                FIRST_PAGE,
+                                DEFAULT_PAGE_SIZE
                         );
 
         ApiErrorAssertions.assertError(
@@ -438,7 +435,7 @@ class SearchApiWireMockTest {
                 .build();
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .search(searchRequest);
 
         response.then()
@@ -472,10 +469,13 @@ class SearchApiWireMockTest {
                 .build();
 
         Response response =
-                authenticatedClient(INVALID_CONTRACT_TOKEN)
-                        .search(
-                                searchRequest
-                        );
+                authenticatedClient(
+                        INVALID_CONTRACT_TOKEN_PROVIDER
+                ).search(
+                        SEARCH_QUERY,
+                        FIRST_PAGE,
+                        DEFAULT_PAGE_SIZE
+                );
 
         assertThrows(
                 AssertionError.class,
@@ -501,7 +501,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchWithoutQuery(
                                 FIRST_PAGE,
                                 DEFAULT_PAGE_SIZE
@@ -535,10 +535,8 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
-                        .search(
-                                request
-                        );
+                authenticatedClient(VALID_TOKEN_PROVIDER)
+                        .search(request);
 
         ApiErrorAssertions.assertError(
                 response,
@@ -569,10 +567,8 @@ class SearchApiWireMockTest {
                 .build();
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
-                        .search(
-                                searchRequest
-                        );
+                authenticatedClient(VALID_TOKEN_PROVIDER)
+                        .search(searchRequest);
 
         ApiErrorAssertions.assertError(
                 response,
@@ -597,7 +593,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchRaw(
                                 SEARCH_QUERY,
                                 "abc",
@@ -626,7 +622,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchRaw(
                                 SEARCH_QUERY,
                                 "",
@@ -655,7 +651,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchRaw(
                                 SEARCH_QUERY,
                                 String.valueOf(FIRST_PAGE),
@@ -684,7 +680,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchRaw(
                                 SEARCH_QUERY,
                                 String.valueOf(FIRST_PAGE),
@@ -716,7 +712,7 @@ class SearchApiWireMockTest {
         );
 
         Response response =
-                authenticatedClient(VALID_TOKEN)
+                authenticatedClient(VALID_TOKEN_PROVIDER)
                         .searchRaw(
                                 SEARCH_QUERY,
                                 page,

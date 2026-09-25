@@ -1,5 +1,6 @@
 package com.elsevier.searchai.config;
 
+import com.elsevier.searchai.auth.TokenProvider;
 import com.elsevier.searchai.filters.CorrelationIdFilter;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.config.RestAssuredConfig;
@@ -54,14 +55,17 @@ public final class RequestSpecFactory {
 
     public static RequestSpecification authenticatedRequestSpec(
             RequestSpecification baseRequestSpec,
-            String accessToken
+            TokenProvider tokenProvider
     ) {
 
-        if (accessToken == null || accessToken.isBlank()) {
+        if (tokenProvider == null) {
             throw new IllegalArgumentException(
-                    "Access token must not be null or blank"
+                    "Token provider must not be null"
             );
         }
+
+        String accessToken =
+                tokenProvider.getAccessToken();
 
         return new RequestSpecBuilder()
                 .addRequestSpecification(baseRequestSpec)
