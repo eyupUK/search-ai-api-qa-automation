@@ -3,6 +3,7 @@ package com.elsevier.searchai.tests;
 import com.elsevier.searchai.assertions.ApiErrorAssertions;
 import com.elsevier.searchai.client.SearchApiClient;
 import com.elsevier.searchai.config.RequestSpecFactory;
+import com.elsevier.searchai.config.ResponseSpecFactory;
 import com.elsevier.searchai.models.SearchRequest;
 import com.elsevier.searchai.models.SearchResponse;
 import com.elsevier.searchai.stubs.SearchApiStubs;
@@ -15,9 +16,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
 class SearchApiWireMockTest {
 
@@ -105,8 +110,13 @@ class SearchApiWireMockTest {
         );
 
         response.then()
-                .statusCode(200)
-                .contentType("application/json");
+                .spec(
+                        ResponseSpecFactory.successfulJsonResponse()
+                )
+                .body(
+                        "query",
+                        equalTo(SEARCH_QUERY)
+                );
 
         SearchResponse searchResponse =
                 response.as(SearchResponse.class);
@@ -157,6 +167,18 @@ class SearchApiWireMockTest {
                 searchResponse.getResults()
                         .get(0)
                         .getPublicationYear()
+        );
+
+        wireMockServer.verify(
+                1,
+                getRequestedFor(
+                        urlPathEqualTo("/search")
+                ).withHeader(
+                        "X-Correlation-ID",
+                        matching(
+                                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"
+                        )
+                )
         );
     }
 
@@ -392,8 +414,9 @@ class SearchApiWireMockTest {
         );
 
         response.then()
-                .statusCode(200)
-                .contentType("application/json")
+                .spec(
+                        ResponseSpecFactory.successfulJsonResponse()
+                )
                 .body(
                         matchesJsonSchemaInClasspath(
                                 "schemas/search-response-schema.json"

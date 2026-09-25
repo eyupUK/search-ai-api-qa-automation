@@ -1,8 +1,13 @@
 package com.elsevier.searchai.config;
 
+import com.elsevier.searchai.filters.CorrelationIdFilter;
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+
+import static io.restassured.config.LogConfig.logConfig;
+import static io.restassured.config.RestAssuredConfig.config;
 
 public final class RequestSpecFactory {
 
@@ -14,6 +19,9 @@ public final class RequestSpecFactory {
 
     private static final String BEARER_PREFIX =
             "Bearer ";
+
+    private static final String CORRELATION_ID_HEADER =
+            "X-Correlation-ID";
 
     private RequestSpecFactory() {
     }
@@ -32,9 +40,19 @@ public final class RequestSpecFactory {
             String baseUri
     ) {
 
+        RestAssuredConfig restAssuredConfig =
+                config()
+                        .logConfig(
+                                logConfig()
+                                        .blacklistDefaultSensitiveHeaders()
+                                        .enableLoggingOfRequestAndResponseIfValidationFails()
+                        );
+
         return new RequestSpecBuilder()
                 .setBaseUri(baseUri)
                 .setAccept(ContentType.JSON)
+                .setConfig(restAssuredConfig)
+                .addFilter(new CorrelationIdFilter())
                 .build();
     }
 
