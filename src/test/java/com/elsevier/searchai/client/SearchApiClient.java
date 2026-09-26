@@ -58,22 +58,72 @@ public class SearchApiClient {
             SearchRequest searchRequest
     ) {
 
-        return given()
-                .spec(requestSpec)
-                .queryParam(
-                        "q",
-                        searchRequest.getQuery()
-                )
-                .queryParam(
-                        "page",
-                        searchRequest.getPage()
-                )
-                .queryParam(
-                        "pageSize",
-                        searchRequest.getPageSize()
-                )
+        RequestSpecification request =
+                given()
+                        .spec(requestSpec)
+                        .queryParam(
+                                "q",
+                                searchRequest.getQuery()
+                        )
+                        .queryParam(
+                                "page",
+                                searchRequest.getPage()
+                        )
+                        .queryParam(
+                                "pageSize",
+                                searchRequest.getPageSize()
+                        );
+
+        addOptionalQueryParam(
+                request,
+                "sort",
+                searchRequest.getSort()
+        );
+
+        addOptionalQueryParam(
+                request,
+                "sortDirection",
+                searchRequest.getSortDirection()
+        );
+
+        addOptionalQueryParam(
+                request,
+                "publicationYearFrom",
+                searchRequest.getPublicationYearFrom()
+        );
+
+        addOptionalQueryParam(
+                request,
+                "publicationYearTo",
+                searchRequest.getPublicationYearTo()
+        );
+
+        addOptionalQueryParam(
+                request,
+                "subject",
+                searchRequest.getSubject()
+        );
+
+        addOptionalQueryParam(
+                request,
+                "documentType",
+                searchRequest.getDocumentType()
+        );
+
+        return request
                 .when()
                 .get("/search");
+    }
+
+    private void addOptionalQueryParam(
+            RequestSpecification request,
+            String name,
+            Object value
+    ) {
+
+        if (value != null) {
+            request.queryParam(name, value);
+        }
     }
 
     public Response searchWithoutQuery(

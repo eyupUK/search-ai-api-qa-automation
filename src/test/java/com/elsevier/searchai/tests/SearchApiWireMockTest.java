@@ -726,4 +726,63 @@ class SearchApiWireMockTest {
                 "Page must be a valid integer"
         );
     }
+
+    @Test
+    void shouldApplySearchFilters() {
+
+        SearchRequest request =
+                SearchTestData.filteredSearch()
+                        .build();
+
+        SearchApiStubs.stubFilteredSearch(
+                wireMockServer,
+                VALID_TOKEN,
+                request.getQuery(),
+                String.valueOf(request.getPage()),
+                String.valueOf(request.getPageSize()),
+                request.getSort(),
+                request.getSortDirection(),
+                String.valueOf(
+                        request.getPublicationYearFrom()
+                ),
+                String.valueOf(
+                        request.getPublicationYearTo()
+                ),
+                request.getSubject(),
+                request.getDocumentType(),
+                200,
+                "search/filtered-search.json"
+        );
+
+        Response response =
+                authenticatedClient(VALID_TOKEN_PROVIDER)
+                        .search(request);
+
+        response.then()
+                .spec(
+                        ResponseSpecFactory.successfulJsonResponse()
+                );
+
+        SearchResponse searchResponse =
+                response.as(SearchResponse.class);
+
+        assertEquals(
+                request.getQuery(),
+                searchResponse.getQuery()
+        );
+
+        assertEquals(
+                request.getPage(),
+                searchResponse.getPage()
+        );
+
+        assertEquals(
+                request.getPageSize(),
+                searchResponse.getPageSize()
+        );
+
+        assertFalse(
+                searchResponse.getResults().isEmpty()
+        );
+    }
 }

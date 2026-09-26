@@ -1,0 +1,29 @@
+{
+  "query": "machine learning",
+  "page": 1,
+  "pageSize": 2,
+  "totalResults": 2,
+  "results": [
+    {
+      "id": "DOC-001",
+      "title": "Machine Learning Research",
+      "abstract": "An overview of machine learning research.",
+      "authors": [
+        "Jane Smith",
+        "John Jones"
+      ],
+      "publicationYear": 2025,
+      "score": 0.98
+    },
+    {
+      "id": "DOC-002",
+      "title": "Deep Learning Methods",
+      "abstract": "A study of deep learning methods.",
+      "authors": [
+        "David Brown"
+      ],
+      "publicationYear": 2024,
+      "score": 0.91
+    }
+  ]
+}

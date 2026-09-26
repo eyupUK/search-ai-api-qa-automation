@@ -24,6 +24,16 @@ public final class SearchTestData {
                 .page(DEFAULT_PAGE)
                 .pageSize(DEFAULT_PAGE_SIZE);
     }
+    public static SearchRequestBuilder filteredSearch() {
+
+        return validSearch()
+                .sort("publicationDate")
+                .sortDirection("DESC")
+                .publicationYearFrom(2020)
+                .publicationYearTo(2026)
+                .subject("computer-science")
+                .documentType("article");
+    }
 
     public static SearchRequestBuilder secondPageSearch() {
 
